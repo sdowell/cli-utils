@@ -47,7 +47,7 @@ func newDefaultInvDestroyerFactory(cfg *rest.Config) destroyerFactoryFunc {
 	}
 }
 
-func defaultInvNotExistsFunc(ctx context.Context, c client.Client, name, namespace, id string) {
+func defaultInvNotExistsFunc(ctx context.Context, c client.Client, _, namespace, id string) {
 	var cmList v1.ConfigMapList
 	err := c.List(ctx, &cmList,
 		client.MatchingLabels(map[string]string{common.InventoryLabel: id}),
@@ -56,7 +56,7 @@ func defaultInvNotExistsFunc(ctx context.Context, c client.Client, name, namespa
 	gomega.Expect(cmList.Items).To(gomega.HaveLen(0), "expected inventory list to be empty")
 }
 
-func defaultInvSizeVerifyFunc(ctx context.Context, c client.Client, name, namespace, id string, specCount, _ int) {
+func defaultInvSizeVerifyFunc(ctx context.Context, c client.Client, _, namespace, id string, specCount, _ int) {
 	var cmList v1.ConfigMapList
 	err := c.List(ctx, &cmList,
 		client.MatchingLabels(map[string]string{common.InventoryLabel: id}),

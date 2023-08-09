@@ -83,6 +83,6 @@ func (c *countingFormatter) FormatActionGroupEvent(
 	return nil
 }
 
-func (c *countingFormatter) FormatSummary(s stats.Stats) error {
+func (c *countingFormatter) FormatSummary(_ stats.Stats) error {
 	return nil
 }

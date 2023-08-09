@@ -117,8 +117,8 @@ func (ef *formatter) FormatErrorEvent(_ event.ErrorEvent) error {
 
 func (ef *formatter) FormatActionGroupEvent(
 	age event.ActionGroupEvent,
-	ags []event.ActionGroup,
-	s stats.Stats,
+	_ []event.ActionGroup,
+	_ stats.Stats,
 	_ list.Collector,
 ) error {
 	switch age.Action {

@@ -236,7 +236,7 @@ func (p *Pruner) removeInventoryAnnotation(obj *unstructured.Unstructured) (*uns
 func (p *Pruner) GetPruneObjs(
 	inv inventory.Info,
 	objs object.UnstructuredSet,
-	opts Options,
+	_ Options,
 ) (object.UnstructuredSet, error) {
 	ids := object.UnstructuredSetToObjMetadataSet(objs)
 	invIDs, err := p.InvClient.GetClusterObjs(inv)

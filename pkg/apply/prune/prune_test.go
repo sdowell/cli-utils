@@ -711,14 +711,14 @@ type failureNamespaceClient struct {
 
 var _ dynamic.ResourceInterface = &failureNamespaceClient{}
 
-func (c *failureNamespaceClient) Delete(ctx context.Context, name string, options metav1.DeleteOptions, subresources ...string) error {
+func (c *failureNamespaceClient) Delete(_ context.Context, name string, _ metav1.DeleteOptions, _ ...string) error {
 	if strings.Contains(name, "delete-failure") {
 		return fmt.Errorf("expected delete error")
 	}
 	return nil
 }
 
-func (c *failureNamespaceClient) Get(ctx context.Context, name string, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
+func (c *failureNamespaceClient) Get(_ context.Context, name string, _ metav1.GetOptions, _ ...string) (*unstructured.Unstructured, error) {
 	if strings.Contains(name, "get-failure") {
 		return nil, fmt.Errorf("expected get error")
 	}
@@ -1007,6 +1007,6 @@ type fakeDynamicResourceClient struct {
 	resourceInterface dynamic.ResourceInterface
 }
 
-func (c *fakeDynamicResourceClient) Namespace(ns string) dynamic.ResourceInterface {
+func (c *fakeDynamicResourceClient) Namespace(_ string) dynamic.ResourceInterface {
 	return c.resourceInterface
 }

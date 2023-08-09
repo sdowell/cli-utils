@@ -686,7 +686,7 @@ func newFakeNamespaceClientFunc(getChan <-chan unstructured.Unstructured) func(r
 	}
 }
 
-func (c *fakeNamespaceClient) Get(ctx context.Context, name string, options metav1.GetOptions, subresources ...string) (*unstructured.Unstructured, error) {
+func (c *fakeNamespaceClient) Get(_ context.Context, name string, _ metav1.GetOptions, _ ...string) (*unstructured.Unstructured, error) {
 	obj, open := <-c.getChan
 	if !open {
 		return nil, apierrors.NewNotFound(c.resource.GroupResource(), name)

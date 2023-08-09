@@ -102,7 +102,7 @@ func (jf *formatter) FormatErrorEvent(e event.ErrorEvent) error {
 
 func (jf *formatter) FormatActionGroupEvent(
 	age event.ActionGroupEvent,
-	ags []event.ActionGroup,
+	_ []event.ActionGroup,
 	s stats.Stats,
 	_ list.Collector,
 ) error {

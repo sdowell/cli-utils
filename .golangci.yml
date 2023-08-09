@@ -46,6 +46,34 @@ linters-settings:
     line-length: 170
   gocyclo:
     min-complexity: 30
+  depguard:
+    rules:
+      Main:
+        files:
+        - $all
+        - "!$test"
+        allow:
+        - $gostd
+        - k8s.io
+        - sigs.k8s.io
+        - github.com/google
+        - github.com/spf13/cobra
+        - github.com/stretchr/testify/assert
+        - github.com/onsi/ginkgo
+        - github.com/onsi/gomega
+        - github.com/spyzhov/ajson
+      Test:
+        files:
+        - $test
+        allow:
+        - $gostd
+        - k8s.io
+        - sigs.k8s.io
+        - github.com/google
+        - github.com/spf13/cobra
+        - github.com/stretchr/testify
+        - github.com/onsi/ginkgo
+        - github.com/onsi/gomega
 
 issues:
   # List of regexps of issue texts to exclude, empty list by default.

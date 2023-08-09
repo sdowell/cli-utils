@@ -50,7 +50,7 @@ func newCustomInvDestroyerFactory(cfg *rest.Config) destroyerFactoryFunc {
 	}
 }
 
-func customInvNotExistsFunc(ctx context.Context, c client.Client, name, namespace, id string) {
+func customInvNotExistsFunc(ctx context.Context, c client.Client, name, namespace, _ string) {
 	var u unstructured.Unstructured
 	u.SetGroupVersionKind(customprovider.InventoryGVK)
 	u.SetName(name)

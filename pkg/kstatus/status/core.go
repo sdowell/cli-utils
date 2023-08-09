@@ -66,7 +66,7 @@ func GetLegacyConditionsFn(u *unstructured.Unstructured) GetConditionsFn {
 }
 
 // alwaysReady Used for resources that are always ready
-func alwaysReady(u *unstructured.Unstructured) (*Result, error) {
+func alwaysReady(_ *unstructured.Unstructured) (*Result, error) {
 	return &Result{
 		Status:     CurrentStatus,
 		Message:    "Resource is always ready",
