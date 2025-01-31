@@ -234,7 +234,7 @@ func (r *Runner) runE(cmd *cobra.Command, args []string) error {
 	switch r.invType {
 	case Local:
 		if len(args) != 0 {
-			printcommon.SprintfWithColor(printcommon.YELLOW,
+			printcommon.SprintWithColor(printcommon.YELLOW,
 				"Warning: Path is assigned while list flag is enabled, ignore the path")
 		}
 		printData, err = r.loadInvFromDisk(cmd, args)

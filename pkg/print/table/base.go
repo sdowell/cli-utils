@@ -63,7 +63,7 @@ func (t *BaseTablePrinter) PrintTable(rs ResourceStates,
 	linePrintCount := 0
 	for i, column := range t.Columns {
 		format := fmt.Sprintf("%%-%ds", column.Width())
-		t.printOrDie(format, column.Header())
+		t.printfOrDie(format, column.Header())
 		if i == len(t.Columns)-1 {
 			t.printOrDie("\n")
 			linePrintCount++
@@ -137,7 +137,14 @@ func (t *BaseTablePrinter) printSubTable(resources []Resource,
 	return linePrintCount
 }
 
-func (t *BaseTablePrinter) printOrDie(format string, a ...interface{}) {
+func (t *BaseTablePrinter) printOrDie(format string) {
+	_, err := fmt.Fprint(t.IOStreams.Out, format)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (t *BaseTablePrinter) printfOrDie(format string, a ...interface{}) {
 	_, err := fmt.Fprintf(t.IOStreams.Out, format, a...)
 	if err != nil {
 		panic(err)
@@ -145,9 +152,9 @@ func (t *BaseTablePrinter) printOrDie(format string, a ...interface{}) {
 }
 
 func (t *BaseTablePrinter) moveUp() {
-	t.printOrDie("%c[%dA", common.ESC, 1)
+	t.printfOrDie("%c[%dA", common.ESC, 1)
 }
 
 func (t *BaseTablePrinter) eraseCurrentLine() {
-	t.printOrDie("%c[2K\r", common.ESC)
+	t.printfOrDie("%c[2K\r", common.ESC)
 }

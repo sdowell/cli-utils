@@ -19,12 +19,12 @@ var (
 	YELLOW Color = 33
 )
 
-// SprintfWithColor formats according to the provided pattern and returns
+// SprintWithColor formats according to the provided pattern and returns
 // the result as a string with the necessary ansii escape codes for
 // color
-func SprintfWithColor(color Color, format string, a ...interface{}) string {
+func SprintWithColor(color Color, msg string) string {
 	return fmt.Sprintf("%c[%dm", ESC, color) +
-		fmt.Sprintf(format, a...) +
+		fmt.Sprint(msg) +
 		fmt.Sprintf("%c[%dm", ESC, RESET)
 }
 

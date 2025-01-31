@@ -10,30 +10,27 @@ import (
 	"sigs.k8s.io/cli-utils/pkg/kstatus/status"
 )
 
-func TestSprintfWithColor(t *testing.T) {
+func TestSprintWithColor(t *testing.T) {
 	testCases := map[string]struct {
 		color          Color
-		format         string
-		args           []interface{}
+		msg            string
 		expectedResult string
 	}{
 		"no args with color": {
 			color:          GREEN,
-			format:         "This is a test",
-			args:           []interface{}{},
+			msg:            "This is a test",
 			expectedResult: "\x1b[32mThis is a test\x1b[0m",
 		},
 		"with args and color": {
 			color:          YELLOW,
-			format:         "%s %s",
-			args:           []interface{}{"sonic", "youth"},
+			msg:            "sonic youth",
 			expectedResult: "\x1b[33msonic youth\x1b[0m",
 		},
 	}
 
 	for tn, tc := range testCases {
 		t.Run(tn, func(t *testing.T) {
-			result := SprintfWithColor(tc.color, tc.format, tc.args...)
+			result := SprintWithColor(tc.color, tc.msg)
 			if want, got := tc.expectedResult, result; want != got {
 				t.Errorf("expected %q, but got %q", want, got)
 			}
