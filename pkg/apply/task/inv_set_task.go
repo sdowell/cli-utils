@@ -158,7 +158,7 @@ func (i *DeleteOrUpdateInvTask) updateInventory(taskContext *taskrunner.TaskCont
 	invObjs = invObjs.Union(invalidObjects)
 
 	klog.V(4).Infof("get the apply status for %d objects", len(invObjs))
-	objStatus := taskContext.InventoryManager().Inventory().ObjStatuses
+	objStatus := taskContext.InventoryManager().Inventory().OldObjectStatuses
 
 	klog.V(4).Infof("set inventory %d total objects", len(invObjs))
 	// Skip entire function for dry-run.
@@ -168,12 +168,17 @@ func (i *DeleteOrUpdateInvTask) updateInventory(taskContext *taskrunner.TaskCont
 	}
 
 	i.ClusterInventory.SetObjects(invObjs)
+	if err := i.InvClient.Update(taskContext.Context(), i.ClusterInventory, inventory.UpdateOptions{}); err != nil {
+		return err
+	}
 	i.ClusterInventory.SetObjectStatuses(objStatus)
 
-	err := i.InvClient.Update(taskContext.Context(), i.ClusterInventory, inventory.UpdateOptions{UpdateStatus: true})
+	if err := i.InvClient.UpdateStatus(taskContext.Context(), i.ClusterInventory, inventory.UpdateOptions{}); err != nil {
+		return err
+	}
 
 	klog.V(2).Infof("inventory set task completing (name: %q)", i.TaskName)
-	return err
+	return nil
 }
 
 // deleteInventory deletes the inventory object from the cluster.

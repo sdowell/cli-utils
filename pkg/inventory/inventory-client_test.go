@@ -72,11 +72,8 @@ func TestGet(t *testing.T) {
 			defer tf.Cleanup()
 			tf.FakeDynamicClient.PrependReactor("get", "configmaps", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 				cm, _ := inventoryToConfigMap(&UnstructuredInventory{
-					ClusterObj: copyInventoryInfo(),
-					BaseInventory: BaseInventory{
-						Objs:        tc.localObjs,
-						ObjStatuses: tc.objStatus,
-					},
+					ClusterObj:    copyInventoryInfo(),
+					BaseInventory: NewBaseInventory(tc.localObjs, tc.objStatus),
 				})
 				return true, cm, nil
 			})
@@ -105,10 +102,11 @@ func TestGet(t *testing.T) {
 
 func TestCreateOrUpdate(t *testing.T) {
 	tests := map[string]struct {
-		inventory  *UnstructuredInventory
-		createObjs object.ObjMetadataSet
-		updateObjs object.ObjMetadataSet
-		isError    bool
+		inventory        *UnstructuredInventory
+		createObjs       object.ObjMetadataSet
+		updateObjs       object.ObjMetadataSet
+		isError          bool
+		expectSkipUpdate bool
 	}{
 		"Nil local inventory object is error": {
 			inventory:  nil,
@@ -133,7 +131,8 @@ func TestCreateOrUpdate(t *testing.T) {
 			updateObjs: object.ObjMetadataSet{
 				ignoreErrInfoToObjMeta(pod1Info),
 			},
-			isError: false,
+			isError:          false,
+			expectSkipUpdate: true,
 		},
 		"Create and Update inventory with expanding object set": {
 			inventory: &UnstructuredInventory{
@@ -217,8 +216,13 @@ func TestCreateOrUpdate(t *testing.T) {
 			if err = invClient.Update(context.TODO(), inventory, UpdateOptions{}); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
-			if updateCalls != 2 || createCalls != 1 { // Update should succeed, create not called again
-				t.Fatalf("expected 2 update but got %d and 1 create but got %d", updateCalls, createCalls)
+			expectedUpdateCalls := 2
+			if tc.expectSkipUpdate {
+				expectedUpdateCalls = 1
+			}
+			if updateCalls != expectedUpdateCalls || createCalls != 1 { // Update should succeed, create not called again
+				t.Fatalf("expected %d update but got %d and 1 create but got %d",
+					expectedUpdateCalls, updateCalls, createCalls)
 			}
 			inv, err = invClient.Get(context.TODO(), tc.inventory, GetOptions{})
 			if err != nil {

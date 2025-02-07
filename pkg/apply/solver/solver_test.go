@@ -797,7 +797,7 @@ func TestTaskQueueBuilder_ApplyBuild(t *testing.T) {
 			assert.NoError(t, err)
 			asserter.Equal(t, tc.expectedTasks, tq.tasks)
 
-			actualStatus := taskContext.InventoryManager().Inventory().ObjStatuses
+			actualStatus := taskContext.InventoryManager().Inventory().OldObjectStatuses
 			testutil.AssertEqual(t, tc.expectedStatus, actualStatus)
 		})
 	}
@@ -1443,7 +1443,7 @@ func TestTaskQueueBuilder_PruneBuild(t *testing.T) {
 			assert.NoError(t, err)
 			asserter.Equal(t, tc.expectedTasks, tq.tasks)
 
-			actualStatus := taskContext.InventoryManager().Inventory().ObjStatuses
+			actualStatus := taskContext.InventoryManager().Inventory().OldObjectStatuses
 			testutil.AssertEqual(t, tc.expectedStatus, actualStatus)
 		})
 	}
@@ -1796,7 +1796,7 @@ func TestTaskQueueBuilder_ApplyPruneBuild(t *testing.T) {
 
 			asserter.Equal(t, tc.expectedTasks, tq.tasks)
 
-			actualStatus := taskContext.InventoryManager().Inventory().ObjStatuses
+			actualStatus := taskContext.InventoryManager().Inventory().OldObjectStatuses
 			testutil.AssertEqual(t, tc.expectedStatus, actualStatus)
 		})
 	}

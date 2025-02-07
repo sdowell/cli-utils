@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -40,12 +41,11 @@ type ReadClient interface {
 
 type WriteClient interface {
 	Update(ctx context.Context, inv Inventory, opts UpdateOptions) error
+	UpdateStatus(ctx context.Context, inv Inventory, opts UpdateOptions) error
 	Delete(ctx context.Context, id Info, opts DeleteOptions) error
 }
 
-type UpdateOptions struct {
-	UpdateStatus bool
-}
+type UpdateOptions struct{}
 
 type GetOptions struct{}
 
@@ -93,29 +93,45 @@ func (ui *UnstructuredInventory) InitialInventory() Inventory {
 
 var _ Inventory = &UnstructuredInventory{}
 
+func NewBaseInventory(objs object.ObjMetadataSet, objStatuses []actuation.ObjectStatus) BaseInventory {
+	oldObjects := make(object.ObjMetadataSet, len(objs))
+	copy(oldObjects, objs)
+	oldObjectStatuses := make([]actuation.ObjectStatus, len(objStatuses))
+	copy(oldObjectStatuses, objStatuses)
+	return BaseInventory{
+		OldObjects:        oldObjects,
+		OldObjectStatuses: oldObjectStatuses,
+		NewObjects:        objs,
+		NewObjectStatuses: objStatuses,
+	}
+}
+
 // BaseInventory is a boilerplate struct that contains the basic methods
 // to implement Inventory. Can be extended for different inventory implementations.
 type BaseInventory struct {
-	// Objs and ObjStatuses are in memory representations of the inventory which are
+	// OldObjects and OldObjectStatuses are in memory representations of the inventory which are
 	// read and manipulated by the applier.
-	Objs        object.ObjMetadataSet
-	ObjStatuses []actuation.ObjectStatus
+	OldObjects        object.ObjMetadataSet
+	OldObjectStatuses []actuation.ObjectStatus
+
+	NewObjects        object.ObjMetadataSet
+	NewObjectStatuses []actuation.ObjectStatus
 }
 
 func (inv *BaseInventory) Objects() object.ObjMetadataSet {
-	return inv.Objs
+	return inv.NewObjects
 }
 
 func (inv *BaseInventory) ObjectStatuses() []actuation.ObjectStatus {
-	return inv.ObjStatuses
+	return inv.NewObjectStatuses
 }
 
 func (inv *BaseInventory) SetObjects(objs object.ObjMetadataSet) {
-	inv.Objs = objs
+	inv.NewObjects = objs
 }
 
 func (inv *BaseInventory) SetObjectStatuses(statuses []actuation.ObjectStatus) {
-	inv.ObjStatuses = statuses
+	inv.NewObjectStatuses = statuses
 }
 
 type FromUnstructuredFunc func(*unstructured.Unstructured) (*UnstructuredInventory, error)
@@ -146,13 +162,13 @@ func NewUnstructuredClient(factory cmdutil.Factory,
 	if err != nil {
 		return nil, err
 	}
-	configMapClient := &UnstructuredClient{
+	unstructuredClient := &UnstructuredClient{
 		client:           dc.Resource(mapping.Resource),
 		statusPolicy:     statusPolicy,
 		fromUnstructured: from,
 		toUnstructured:   to,
 	}
-	return configMapClient, nil
+	return unstructuredClient, nil
 }
 
 // Get the in-cluster inventory
@@ -186,14 +202,18 @@ func (cic *UnstructuredClient) List(ctx context.Context, _ ListOptions) ([]Inven
 }
 
 // Update the in-cluster inventory
-// Performs a simple in-place update on the ConfigMap
-func (cic *UnstructuredClient) Update(ctx context.Context, inv Inventory, opts UpdateOptions) error {
+// Performs a simple in-place update on the unstructured object
+func (cic *UnstructuredClient) Update(ctx context.Context, inv Inventory, _ UpdateOptions) error {
 	ui, ok := inv.(*UnstructuredInventory)
 	if !ok {
-		return fmt.Errorf("expected ConfigMapInventory")
+		return fmt.Errorf("expected UnstructuredInventory")
 	}
 	if ui == nil {
 		return fmt.Errorf("inventory is nil")
+	}
+	// Skip update if the inventory already exists and is unchanged
+	if len(ui.OldObjects) > 0 && equality.Semantic.DeepEqual(ui.NewObjects, ui.OldObjects) {
+		return nil
 	}
 	uObj, err := cic.toUnstructured(ui)
 	if err != nil {
@@ -206,36 +226,53 @@ func (cic *UnstructuredClient) Update(ctx context.Context, inv Inventory, opts U
 		if err != nil {
 			return err
 		}
-		ui.ClusterObj = newObj
-		return nil
 	} else if err != nil {
 		return err
 	}
 	ui.ClusterObj = newObj
-	if cic.statusPolicy == StatusPolicyNone || !opts.UpdateStatus {
+	ui.OldObjects = ui.NewObjects
+	return nil
+}
+
+// UpdateStatus updates the status of the in-cluster inventory
+// Performs a simple in-place update on the unstructured object
+func (cic *UnstructuredClient) UpdateStatus(ctx context.Context, inv Inventory, _ UpdateOptions) error {
+	ui, ok := inv.(*UnstructuredInventory)
+	if !ok {
+		return fmt.Errorf("expected UnstructuredInventory")
+	}
+	if ui == nil {
+		return fmt.Errorf("inventory is nil")
+	}
+	if equality.Semantic.DeepEqual(ui.NewObjectStatuses, ui.OldObjectStatuses) {
 		return nil
 	}
-	uObj.SetResourceVersion(ui.ClusterObj.GetResourceVersion())
-	_, ok, err = unstructured.NestedInt64(newObj.Object, "status", "observedGeneration")
+	uObj, err := cic.toUnstructured(ui)
+	if err != nil {
+		return err
+	}
+	// Update observedGeneration, if it exists
+	_, ok, err = unstructured.NestedInt64(uObj.Object, "status", "observedGeneration")
 	if err != nil {
 		return err
 	}
 	if ok {
-		err = unstructured.SetNestedField(uObj.Object, newObj.GetGeneration(), "status", "observedGeneration")
+		err = unstructured.SetNestedField(uObj.Object, uObj.GetGeneration(), "status", "observedGeneration")
 		if err != nil {
 			return err
 		}
 	}
-	newObj, err = cic.client.Namespace(uObj.GetNamespace()).UpdateStatus(ctx, uObj, metav1.UpdateOptions{})
+	newObj, err := cic.client.Namespace(uObj.GetNamespace()).UpdateStatus(ctx, uObj, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 	ui.ClusterObj = newObj
+	ui.OldObjectStatuses = ui.NewObjectStatuses
 	return nil
 }
 
 // Delete the in-cluster inventory
-// Performs a simple deletion of the ConfigMap
+// Performs a simple deletion of the unstructured object
 func (cic *UnstructuredClient) Delete(ctx context.Context, id Info, _ DeleteOptions) error {
 	if id == nil {
 		return fmt.Errorf("id is nil")

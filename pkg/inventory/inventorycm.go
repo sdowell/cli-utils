@@ -75,15 +75,17 @@ func configMapToInventory(configMap *unstructured.Unstructured) (*UnstructuredIn
 		err := fmt.Errorf("error retrieving object metadata from inventory object")
 		return nil, err
 	}
+	var objects object.ObjMetadataSet
 	if exists {
 		for objStr := range objMap {
 			obj, err := object.ParseObjMetadata(objStr)
 			if err != nil {
 				return nil, err
 			}
-			inv.Objs = append(inv.Objs, obj)
+			objects = append(objects, obj)
 		}
 	}
+	inv.BaseInventory = NewBaseInventory(objects, nil)
 	return inv, nil
 }
 

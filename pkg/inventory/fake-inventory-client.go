@@ -33,10 +33,8 @@ func (f FakeClientFactory) NewClient(cmdutil.Factory) (Client, error) {
 func NewFakeClient(objs object.ObjMetadataSet) *FakeClient {
 	return &FakeClient{
 		Inv: &FakeInventory{
-			InventoryID: "fake-inventory",
-			BaseInventory: BaseInventory{
-				Objs: objs,
-			},
+			InventoryID:   "fake-inventory",
+			BaseInventory: NewBaseInventory(objs, nil),
 		},
 		Err: nil,
 	}
@@ -53,6 +51,16 @@ func (fic *FakeClient) Get(ctx context.Context, id Info, opts GetOptions) (Inven
 // Update the stored cluster inventory objs with the passed obj, or an
 // error if one is set up.
 func (fic *FakeClient) Update(ctx context.Context, inv Inventory, opts UpdateOptions) error {
+	if fic.Err != nil {
+		return fic.Err
+	}
+	fic.Inv = inv
+	return nil
+}
+
+// UpdateStatus the stored cluster inventory objs with the passed obj, or an
+// error if one is set up.
+func (fic *FakeClient) UpdateStatus(ctx context.Context, inv Inventory, opts UpdateOptions) error {
 	if fic.Err != nil {
 		return fic.Err
 	}

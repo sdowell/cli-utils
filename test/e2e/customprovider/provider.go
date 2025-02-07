@@ -109,7 +109,7 @@ func (CustomClientFactory) NewClient(factory util.Factory) (inventory.Client, er
 
 func toUnstructured(inv *inventory.UnstructuredInventory) (*unstructured.Unstructured, error) {
 	var specObjs []interface{}
-	for _, obj := range inv.Objs {
+	for _, obj := range inv.OldObjects {
 		specObjs = append(specObjs, map[string]interface{}{
 			"group":     obj.GroupKind.Group,
 			"kind":      obj.GroupKind.Kind,
@@ -118,7 +118,7 @@ func toUnstructured(inv *inventory.UnstructuredInventory) (*unstructured.Unstruc
 		})
 	}
 	var statusObjs []interface{}
-	for _, objStatus := range inv.ObjStatuses {
+	for _, objStatus := range inv.OldObjectStatuses {
 		statusObjs = append(statusObjs, map[string]interface{}{
 			"group":     objStatus.Group,
 			"kind":      objStatus.Kind,
@@ -174,7 +174,7 @@ func fromUnstructured(obj *unstructured.Unstructured) (*inventory.UnstructuredIn
 				Kind:  kind,
 			},
 		}
-		inv.Objs = append(inv.Objs, id)
+		inv.OldObjects = append(inv.OldObjects, id)
 	}
 	return inv, nil
 }
