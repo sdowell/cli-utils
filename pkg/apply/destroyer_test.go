@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/cli-utils/pkg/apply/event"
+	"sigs.k8s.io/cli-utils/pkg/inventory"
 	pollevent "sigs.k8s.io/cli-utils/pkg/kstatus/polling/event"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/status"
 	"sigs.k8s.io/cli-utils/pkg/object"
@@ -20,7 +21,7 @@ import (
 func TestDestroyerCancel(t *testing.T) {
 	testCases := map[string]struct {
 		// inventory input to destroyer
-		invInfo inventoryInfo
+		inv *inventory.FakeInventory
 		// objects in the cluster
 		clusterObjs object.UnstructuredSet
 		// options input to destroyer.Run
@@ -42,13 +43,13 @@ func TestDestroyerCancel(t *testing.T) {
 			expectRunTimeout: true,
 			runTimeout:       2 * time.Second,
 			testTimeout:      30 * time.Second,
-			invInfo: inventoryInfo{
-				name:      "abc-123",
-				namespace: "test",
-				id:        "test",
-				set: object.ObjMetadataSet{
+			inv: &inventory.FakeInventory{
+				InventoryName:      "abc-123",
+				InventoryNamespace: "test",
+				InventoryID:        "test",
+				BaseInventory: inventory.NewBaseInventory(object.ObjMetadataSet{
 					testutil.ToIdentifier(t, resources["deployment"]),
-				},
+				}, nil),
 			},
 			clusterObjs: object.UnstructuredSet{
 				testutil.Unstructured(t, resources["deployment"], testutil.AddOwningInv(t, "test")),
@@ -165,13 +166,13 @@ func TestDestroyerCancel(t *testing.T) {
 			expectRunTimeout: false,
 			runTimeout:       10 * time.Second,
 			testTimeout:      30 * time.Second,
-			invInfo: inventoryInfo{
-				name:      "abc-123",
-				namespace: "test",
-				id:        "test",
-				set: object.ObjMetadataSet{
+			inv: &inventory.FakeInventory{
+				InventoryName:      "abc-123",
+				InventoryNamespace: "test",
+				InventoryID:        "test",
+				BaseInventory: inventory.NewBaseInventory(object.ObjMetadataSet{
 					testutil.ToIdentifier(t, resources["deployment"]),
-				},
+				}, nil),
 			},
 			clusterObjs: object.UnstructuredSet{
 				testutil.Unstructured(t, resources["deployment"], testutil.AddOwningInv(t, "test")),
@@ -312,12 +313,10 @@ func TestDestroyerCancel(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			statusWatcher := newFakeWatcher(tc.statusEvents)
 
-			invInfo := tc.invInfo.toInfo()
-
 			destroyer := newTestDestroyer(t,
-				tc.invInfo,
+				tc.inv,
 				// Add the inventory to the cluster (to allow deletion)
-				append(tc.clusterObjs, tc.invInfo.toUnstructured()),
+				append(tc.clusterObjs, tc.inv.ToUnstructured()),
 				statusWatcher,
 			)
 
@@ -329,7 +328,7 @@ func TestDestroyerCancel(t *testing.T) {
 			testCtx, testCancel := context.WithTimeout(context.Background(), tc.testTimeout)
 			defer testCancel() // cleanup
 
-			eventChannel := destroyer.Run(runCtx, invInfo, tc.options)
+			eventChannel := destroyer.Run(runCtx, tc.inv, tc.options)
 
 			// only start poller once per run
 			var once sync.Once
@@ -353,7 +352,7 @@ func TestDestroyerCancel(t *testing.T) {
 					events = append(events, e)
 
 					if e.Type == event.ActionGroupType &&
-						e.ActionGroupEvent.Action == event.WaitAction {
+							e.ActionGroupEvent.Action == event.WaitAction {
 						once.Do(func() {
 							// Start sending status events after waiting starts
 							statusWatcher.Start()

@@ -183,7 +183,7 @@ func TestInventoryNamespaceInSet(t *testing.T) {
 	inventoryNamespace := createNamespace(namespace)
 
 	tests := map[string]struct {
-		inv       inventory.Info
+		inv       inventory.Inventory
 		objects   []*unstructured.Unstructured
 		namespace *unstructured.Unstructured
 	}{

@@ -36,10 +36,10 @@ import (
 )
 
 type inventoryInfo struct {
-	name      string
-	namespace string
-	id        string
-	set       object.ObjMetadataSet
+	InventoryName      string
+	InventoryNamespace string
+	InventoryID        string
+	set                object.ObjMetadataSet
 }
 
 func (i inventoryInfo) toUnstructured() *unstructured.Unstructured {
@@ -53,10 +53,10 @@ func (i inventoryInfo) toUnstructured() *unstructured.Unstructured {
 			"apiVersion": "v1",
 			"kind":       "ConfigMap",
 			"metadata": map[string]interface{}{
-				"name":      i.name,
-				"namespace": i.namespace,
+				"InventoryName":      i.InventoryName,
+				"InventoryNamespace": i.InventoryNamespace,
 				"labels": map[string]interface{}{
-					common.InventoryLabel: i.id,
+					common.InventoryLabel: i.InventoryID,
 				},
 			},
 			"data": invMap,
@@ -64,7 +64,7 @@ func (i inventoryInfo) toUnstructured() *unstructured.Unstructured {
 	}
 }
 
-func (i inventoryInfo) toInfo() inventory.Info {
+func (i inventoryInfo) toInfo() inventory.Inventory {
 	return inventory.WrapInventoryInfoObj(i.toUnstructured())
 }
 
@@ -74,12 +74,12 @@ func (i inventoryInfo) toWrapped() inventory.Inventory {
 
 func newTestApplier(
 	t *testing.T,
-	invInfo inventoryInfo,
+	inventory *inventory.FakeInventory,
 	resources object.UnstructuredSet,
 	clusterObjs object.UnstructuredSet,
 	statusWatcher watcher.StatusWatcher,
 ) *Applier {
-	tf := newTestFactory(t, invInfo, resources, clusterObjs)
+	tf := newTestFactory(t, inventory, resources, clusterObjs)
 	defer tf.Cleanup()
 
 	infoHelper := &fakeInfoHelper{
@@ -95,7 +95,7 @@ func newTestApplier(
 		Build()
 	require.NoError(t, err)
 
-	// Inject the fakeInfoHelper to allow generating Info
+	// Inject the fakeInfoHelper to allow generating Inventory
 	// objects that use the FakeRESTClient as the UnstructuredClient.
 	applier.infoHelper = infoHelper
 
@@ -104,7 +104,7 @@ func newTestApplier(
 
 func newTestDestroyer(
 	t *testing.T,
-	invInfo inventoryInfo,
+	invInfo *inventory.FakeInventory,
 	clusterObjs object.UnstructuredSet,
 	statusWatcher watcher.StatusWatcher,
 ) *Destroyer {
@@ -127,7 +127,7 @@ func newTestInventory(
 	t *testing.T,
 	tf *cmdtesting.TestFactory,
 ) inventory.Client {
-	// Use an Client with a fakeInfoHelper to allow generating Info
+	// Use an Client with a fakeInfoHelper to allow generating Inventory
 	// objects that use the FakeRESTClient as the UnstructuredClient.
 	invClient, err := inventory.ClusterClientFactory{StatusPolicy: inventory.StatusPolicyAll}.NewClient(tf)
 	require.NoError(t, err)
@@ -136,11 +136,11 @@ func newTestInventory(
 
 func newTestFactory(
 	t *testing.T,
-	invInfo inventoryInfo,
+	inventory *inventory.FakeInventory,
 	resourceSet object.UnstructuredSet,
 	clusterObjs object.UnstructuredSet,
 ) *cmdtesting.TestFactory {
-	tf := cmdtesting.NewTestFactory().WithNamespace(invInfo.namespace)
+	tf := cmdtesting.NewTestFactory().WithNamespace(inventory.Namespace())
 
 	mapper, err := tf.ToRESTMapper()
 	require.NoError(t, err)
@@ -174,7 +174,7 @@ func newTestFactory(
 	}
 
 	tf.UnstructuredClient = newFakeRESTClient(t, handlers)
-	tf.FakeDynamicClient = fakeDynamicClient(t, mapper, invInfo, objs...)
+	tf.FakeDynamicClient = fakeDynamicClient(t, mapper, inventory, objs...)
 
 	return tf
 }
@@ -287,9 +287,9 @@ func (g *genericHandler) handle(t *testing.T, req *http.Request) (*http.Response
 	return nil, false, nil
 }
 
-func newInventoryReactor(invInfo inventoryInfo) *inventoryReactor {
+func newInventoryReactor(inv *inventory.FakeInventory) *inventoryReactor {
 	return &inventoryReactor{
-		inventoryObj: invInfo.toUnstructured(),
+		inventoryObj: inv.ToUnstructured(),
 	}
 }
 
@@ -434,7 +434,7 @@ func (f *fakeInfoHelper) getClient(gv schema.GroupVersion) (resource.RESTClient,
 }
 
 // fakeDynamicClient returns a fake dynamic client.
-func fakeDynamicClient(t *testing.T, mapper meta.RESTMapper, invInfo inventoryInfo, objs ...resourceInfo) *dynamicfake.FakeDynamicClient {
+func fakeDynamicClient(t *testing.T, mapper meta.RESTMapper, invInfo *inventory.FakeInventory, objs ...resourceInfo) *dynamicfake.FakeDynamicClient {
 	fakeClient := dynamicfake.NewSimpleDynamicClient(scheme.Scheme)
 
 	invReactor := newInventoryReactor(invInfo)

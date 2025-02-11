@@ -75,21 +75,21 @@ func setDestroyerDefaults(o *DestroyerOptions) {
 // Run performs the destroy step. Passes the inventory object. This
 // happens asynchronously on progress and any errors are reported
 // back on the event channel.
-func (d *Destroyer) Run(ctx context.Context, invInfo inventory.Info, options DestroyerOptions) <-chan event.Event {
+func (d *Destroyer) Run(ctx context.Context, invInfo inventory.Inventory, options DestroyerOptions) <-chan event.Event {
 	eventChannel := make(chan event.Event)
 	setDestroyerDefaults(&options)
 	go func() {
 		defer close(eventChannel)
 		clusterInventory, err := d.invClient.Get(ctx, invInfo, inventory.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			clusterInventory = invInfo.InitialInventory()
+			clusterInventory = invInfo
 		} else if err != nil {
 			handleError(eventChannel, err)
 			return
 		}
 		if clusterInventory.ID() != invInfo.ID() {
-			handleError(eventChannel, fmt.Errorf("inventory-id of inventory object %s/%s in cluster doesn't match provided id %q",
-				invInfo.Namespace(), invInfo.Name(), invInfo.ID()))
+			handleError(eventChannel, fmt.Errorf("inventory-id of inventory object %q in cluster doesn't match provided id %q",
+				clusterInventory.ID(), invInfo.ID()))
 		}
 
 		// Retrieve the objects to be deleted from the cluster. Second parameter is empty

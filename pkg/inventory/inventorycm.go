@@ -37,8 +37,8 @@ func WrapInventoryObj(inv *unstructured.Unstructured) Inventory {
 
 // WrapInventoryInfoObj takes a passed ConfigMap (as a resource.Info),
 // wraps it with the ConfigMap and upcasts the wrapper as
-// an the Info interface.
-func WrapInventoryInfoObj(inv *unstructured.Unstructured) Info {
+// an the Inventory interface.
+func WrapInventoryInfoObj(inv *unstructured.Unstructured) Inventory {
 	internalInventory, err := configMapToInventory(inv)
 	if err != nil {
 		panic(err) //TODO: fix

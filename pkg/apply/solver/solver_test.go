@@ -1832,11 +1832,10 @@ func fakeClientComparer() cmp.Option {
 	})
 }
 
-// inventoryInfoComparer allows comparison of inventory.Info, ignoring impl.
+// inventoryInfoComparer allows comparison of inventory.Inventory, ignoring impl.
 func inventoryInfoComparer() cmp.Option {
-	return cmp.Comparer(func(x, y inventory.Info) bool {
+	return cmp.Comparer(func(x, y inventory.Inventory) bool {
 		return x.ID() == y.ID() &&
-			x.Name() == y.Name() &&
 			x.Namespace() == y.Namespace()
 	})
 }

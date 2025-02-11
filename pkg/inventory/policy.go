@@ -83,7 +83,7 @@ const (
 	NoMatch
 )
 
-func IDMatch(inv Info, obj *unstructured.Unstructured) IDMatchStatus {
+func IDMatch(inv Inventory, obj *unstructured.Unstructured) IDMatchStatus {
 	annotations := obj.GetAnnotations()
 	value, found := annotations[OwningInventoryKey]
 	if !found {
@@ -95,7 +95,7 @@ func IDMatch(inv Info, obj *unstructured.Unstructured) IDMatchStatus {
 	return NoMatch
 }
 
-func CanApply(inv Info, obj *unstructured.Unstructured, policy Policy) (bool, error) {
+func CanApply(inv Inventory, obj *unstructured.Unstructured, policy Policy) (bool, error) {
 	matchStatus := IDMatch(inv, obj)
 	switch matchStatus {
 	case Empty:
@@ -118,7 +118,7 @@ func CanApply(inv Info, obj *unstructured.Unstructured, policy Policy) (bool, er
 	}
 }
 
-func CanPrune(inv Info, obj *unstructured.Unstructured, policy Policy) (bool, error) {
+func CanPrune(inv Inventory, obj *unstructured.Unstructured, policy Policy) (bool, error) {
 	matchStatus := IDMatch(inv, obj)
 	switch matchStatus {
 	case Empty:

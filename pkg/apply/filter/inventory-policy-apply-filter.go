@@ -22,7 +22,7 @@ import (
 type InventoryPolicyApplyFilter struct {
 	Client    dynamic.Interface
 	Mapper    meta.RESTMapper
-	Inv       inventory.Info
+	Inv       inventory.Inventory
 	InvPolicy inventory.Policy
 }
 

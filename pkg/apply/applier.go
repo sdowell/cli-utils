@@ -82,7 +82,7 @@ func (a *Applier) prepareObjects(ctx context.Context, clusterInv inventory.Inven
 // before all the given resources have been applied to the cluster. Any
 // cancellation or timeout will only affect how long we Wait for the
 // resources to become current.
-func (a *Applier) Run(ctx context.Context, invInfo inventory.Info, objects object.UnstructuredSet, options ApplierOptions) <-chan event.Event {
+func (a *Applier) Run(ctx context.Context, invInfo inventory.Inventory, objects object.UnstructuredSet, options ApplierOptions) <-chan event.Event {
 	klog.V(4).Infof("apply run for %d objects", len(objects))
 	eventChannel := make(chan event.Event)
 	setDefaults(&options)
@@ -99,14 +99,14 @@ func (a *Applier) Run(ctx context.Context, invInfo inventory.Info, objects objec
 
 		clusterInventory, err := a.invClient.Get(ctx, invInfo, inventory.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			clusterInventory = invInfo.InitialInventory()
+			clusterInventory = invInfo
 		} else if err != nil {
 			handleError(eventChannel, err)
 			return
 		}
 		if clusterInventory.ID() != invInfo.ID() {
-			handleError(eventChannel, fmt.Errorf("inventory-id of inventory object %s/%s in cluster doesn't match provided id %q",
-				invInfo.Namespace(), invInfo.Name(), invInfo.ID()))
+			handleError(eventChannel, fmt.Errorf("inventory-id of inventory object %q in cluster doesn't match provided id %q",
+				clusterInventory.ID(), invInfo.ID()))
 		}
 
 		// Decide which objects to apply and which to prune
@@ -307,10 +307,10 @@ func handleError(eventChannel chan event.Event, err error) {
 }
 
 // localNamespaces stores a set of strings of all the namespaces
-// for the passed non cluster-scoped localObjs, plus the namespace
+// for the passed non cluster-scoped localObjs, plus the InventoryNamespace
 // of the passed inventory object. This is used to skip deleting
 // namespaces which have currently applied objects in them.
-func localNamespaces(localInv inventory.Info, localObjs []object.ObjMetadata) sets.String { // nolint:staticcheck
+func localNamespaces(localInv inventory.Inventory, localObjs []object.ObjMetadata) sets.String { // nolint:staticcheck
 	namespaces := sets.NewString()
 	for _, obj := range localObjs {
 		if obj.Namespace != "" {

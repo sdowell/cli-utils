@@ -181,7 +181,7 @@ func (r *Runner) loadInvFromDisk(cmd *cobra.Command, args []string) (*printer.Pr
 		// check if the object is under one of the targeted namespaces
 		if _, ok := r.namespaceSet[obj.Namespace]; ok || len(r.namespaceSet) == 0 {
 			// add to the map for future reference
-			printData.InvNameMap[obj] = inv.Name()
+			printData.InvNameMap[obj] = inv.ID()
 			// append to identifiers
 			printData.Identifiers = append(printData.Identifiers, obj)
 		}
@@ -346,7 +346,7 @@ func pollerFactoryFunc(f cmdutil.Factory) (poller.Poller, error) {
 }
 
 type Loader interface {
-	GetInvInfo(cmd *cobra.Command, args []string) (inventory.Info, error)
+	GetInvInfo(cmd *cobra.Command, args []string) (inventory.Inventory, error)
 }
 
 type InventoryLoader struct {
@@ -359,7 +359,7 @@ func NewInventoryLoader(loader manifestreader.ManifestLoader) *InventoryLoader {
 	}
 }
 
-func (ir *InventoryLoader) GetInvInfo(cmd *cobra.Command, args []string) (inventory.Info, error) {
+func (ir *InventoryLoader) GetInvInfo(cmd *cobra.Command, args []string) (inventory.Inventory, error) {
 	_, err := common.DemandOneDirectory(args)
 	if err != nil {
 		return nil, err

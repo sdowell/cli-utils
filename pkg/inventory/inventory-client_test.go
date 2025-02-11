@@ -28,7 +28,7 @@ func podStatus(info *resource.Info) actuation.ObjectStatus {
 func TestGet(t *testing.T) {
 	tests := map[string]struct {
 		statusPolicy StatusPolicy
-		inv          Info
+		inv          Inventory
 		localObjs    object.ObjMetadataSet
 		objStatus    []actuation.ObjectStatus
 		isError      bool
@@ -238,7 +238,7 @@ func TestCreateOrUpdate(t *testing.T) {
 func TestDeleteInventoryObj(t *testing.T) {
 	tests := map[string]struct {
 		statusPolicy StatusPolicy
-		inv          Info
+		inv          Inventory
 		localObjs    object.ObjMetadataSet
 		objStatus    []actuation.ObjectStatus
 		wantErr      bool

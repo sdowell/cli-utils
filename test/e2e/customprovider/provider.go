@@ -179,7 +179,7 @@ func fromUnstructured(obj *unstructured.Unstructured) (*inventory.UnstructuredIn
 	return inv, nil
 }
 
-func WrapInventoryInfoObj(obj *unstructured.Unstructured) inventory.Info {
+func WrapInventoryInfoObj(obj *unstructured.Unstructured) inventory.Inventory {
 	inv, err := fromUnstructured(obj)
 	if err != nil {
 		panic(err)

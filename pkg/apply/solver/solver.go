@@ -57,7 +57,7 @@ type TaskQueueBuilder struct {
 	pruneCounter int
 	waitCounter  int
 
-	invInfo   inventory.Info
+	invInfo   inventory.Inventory
 	applyObjs object.UnstructuredSet
 	pruneObjs object.UnstructuredSet
 }
@@ -102,7 +102,7 @@ type Options struct {
 }
 
 // WithInventory sets the inventory info and returns the builder for chaining.
-func (t *TaskQueueBuilder) WithInventory(inv inventory.Info) *TaskQueueBuilder {
+func (t *TaskQueueBuilder) WithInventory(inv inventory.Inventory) *TaskQueueBuilder {
 	t.invInfo = inv
 	return t
 }

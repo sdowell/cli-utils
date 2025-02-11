@@ -6,7 +6,9 @@ package inventory
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	"sigs.k8s.io/cli-utils/pkg/common"
 	"sigs.k8s.io/cli-utils/pkg/object"
 )
 
@@ -41,7 +43,7 @@ func NewFakeClient(objs object.ObjMetadataSet) *FakeClient {
 }
 
 // Get returns currently stored inventory.
-func (fic *FakeClient) Get(ctx context.Context, id Info, opts GetOptions) (Inventory, error) {
+func (fic *FakeClient) Get(ctx context.Context, id Inventory, opts GetOptions) (Inventory, error) {
 	if fic.Err != nil {
 		return nil, fic.Err
 	}
@@ -69,7 +71,7 @@ func (fic *FakeClient) UpdateStatus(ctx context.Context, inv Inventory, opts Upd
 }
 
 // Delete returns an error if one is forced; does nothing otherwise.
-func (fic *FakeClient) Delete(ctx context.Context, id Info, opts DeleteOptions) error {
+func (fic *FakeClient) Delete(ctx context.Context, id Inventory, opts DeleteOptions) error {
 	if fic.Err != nil {
 		return fic.Err
 	}
@@ -94,9 +96,37 @@ func (fic *FakeClient) ClearError() {
 
 type FakeInventory struct {
 	BaseInventory
-	InventoryID string
+	InventoryID        string
+	InventoryNamespace string
+	InventoryName      string
 }
 
 func (fi *FakeInventory) ID() string {
 	return fi.InventoryID
+}
+
+func (fi *FakeInventory) Namespace() string {
+	return fi.InventoryNamespace
+}
+
+func (fi *FakeInventory) ToUnstructured() *unstructured.Unstructured {
+	invMap := make(map[string]interface{})
+	for _, objMeta := range fi.OldObjects {
+		invMap[objMeta.String()] = ""
+	}
+
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "ConfigMap",
+			"metadata": map[string]interface{}{
+				"name":      fi.InventoryName,
+				"namespace": fi.InventoryNamespace,
+				"labels": map[string]interface{}{
+					common.InventoryLabel: fi.InventoryID,
+				},
+			},
+			"data": invMap,
+		},
+	}
 }

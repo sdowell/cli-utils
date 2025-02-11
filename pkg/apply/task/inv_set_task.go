@@ -21,7 +21,7 @@ type DeleteOrUpdateInvTask struct {
 	TaskName         string
 	ClusterInventory inventory.Inventory
 	InvClient        inventory.WriteClient
-	InvInfo          inventory.Info
+	InvInfo          inventory.Inventory
 	DryRun           common.DryRunStrategy
 	// if Destroy is set, the inventory will be deleted if all objects were successfully pruned
 	Destroy bool

@@ -28,6 +28,8 @@ type Client interface {
 
 type Inventory interface {
 	ID() string
+	// Namespace of the inventory object.
+	Namespace() string
 	Objects() object.ObjMetadataSet
 	ObjectStatuses() []actuation.ObjectStatus
 	SetObjects(object.ObjMetadataSet)
@@ -35,14 +37,14 @@ type Inventory interface {
 }
 
 type ReadClient interface {
-	Get(ctx context.Context, id Info, opts GetOptions) (Inventory, error)
+	Get(ctx context.Context, id Inventory, opts GetOptions) (Inventory, error)
 	List(ctx context.Context, opts ListOptions) ([]Inventory, error)
 }
 
 type WriteClient interface {
 	Update(ctx context.Context, inv Inventory, opts UpdateOptions) error
 	UpdateStatus(ctx context.Context, inv Inventory, opts UpdateOptions) error
-	Delete(ctx context.Context, id Info, opts DeleteOptions) error
+	Delete(ctx context.Context, id Inventory, opts DeleteOptions) error
 }
 
 type UpdateOptions struct{}
@@ -172,11 +174,18 @@ func NewUnstructuredClient(factory cmdutil.Factory,
 }
 
 // Get the in-cluster inventory
-func (cic *UnstructuredClient) Get(ctx context.Context, id Info, _ GetOptions) (Inventory, error) {
-	if id == nil {
+func (cic *UnstructuredClient) Get(ctx context.Context, inv Inventory, _ GetOptions) (Inventory, error) {
+	if inv == nil {
 		return nil, fmt.Errorf("id is nil")
 	}
-	obj, err := cic.client.Namespace(id.Namespace()).Get(ctx, id.Name(), metav1.GetOptions{})
+	ui, ok := inv.(*UnstructuredInventory)
+	if !ok {
+		return nil, fmt.Errorf("expected UnstructuredInventory")
+	}
+	if ui == nil {
+		return nil, fmt.Errorf("inventory is nil")
+	}
+	obj, err := cic.client.Namespace(ui.Namespace()).Get(ctx, ui.Name(), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -273,11 +282,18 @@ func (cic *UnstructuredClient) UpdateStatus(ctx context.Context, inv Inventory, 
 
 // Delete the in-cluster inventory
 // Performs a simple deletion of the unstructured object
-func (cic *UnstructuredClient) Delete(ctx context.Context, id Info, _ DeleteOptions) error {
-	if id == nil {
+func (cic *UnstructuredClient) Delete(ctx context.Context, inv Inventory, _ DeleteOptions) error {
+	if inv == nil {
 		return fmt.Errorf("id is nil")
 	}
-	if err := cic.client.Namespace(id.Namespace()).Delete(ctx, id.Name(), metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+	ui, ok := inv.(*UnstructuredInventory)
+	if !ok {
+		return fmt.Errorf("expected UnstructuredInventory")
+	}
+	if ui == nil {
+		return fmt.Errorf("inventory is nil")
+	}
+	if err := cic.client.Namespace(ui.Namespace()).Delete(ctx, ui.Name(), metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 	return nil

@@ -14,7 +14,7 @@ import (
 // if an object should be pruned (deleted) because of the InventoryPolicy
 // and if the objects owning inventory identifier matchs the inventory id.
 type InventoryPolicyPruneFilter struct {
-	Inv       inventory.Info
+	Inv       inventory.Inventory
 	InvPolicy inventory.Policy
 }
 

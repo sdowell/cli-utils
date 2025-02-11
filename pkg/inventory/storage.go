@@ -104,9 +104,9 @@ func SplitUnstructureds(objs object.UnstructuredSet) (*unstructured.Unstructured
 }
 
 // addSuffixToName adds the passed suffix (usually a hash) as a suffix
-// to the name of the passed object stored in the Info struct. Returns
+// to the name of the passed object stored in the Inventory struct. Returns
 // an error if name stored in the object differs from the name in
-// the Info struct.
+// the Inventory struct.
 func addSuffixToName(obj *unstructured.Unstructured, suffix string) error {
 	suffix = strings.TrimSpace(suffix)
 	if len(suffix) == 0 {
@@ -115,7 +115,7 @@ func addSuffixToName(obj *unstructured.Unstructured, suffix string) error {
 
 	name := obj.GetName()
 	if name != obj.GetName() {
-		return fmt.Errorf("inventory object (%s) and resource.Info (%s) have different names", name, obj.GetName())
+		return fmt.Errorf("inventory object (%s) and resource.Inventory (%s) have different names", name, obj.GetName())
 	}
 	// Error if name already has suffix.
 	suffix = "-" + suffix
